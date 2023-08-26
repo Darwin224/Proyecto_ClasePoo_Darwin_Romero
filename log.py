@@ -1,8 +1,17 @@
 import sqlite3
+import datetime
+from datetime import datetime as tim
 
+class FechaCort:
+    fecha_corte = datetime.date.today()
 
-class Trabajador:
+    @classmethod
+    def set_fecha_corte(cls, fecha):
+        cls.fecha_corte = fecha
+
+class Trabajador(FechaCort):
     def __init__(self, id, nombre, apellido, salario, cargo, registrado_por):
+        super().__init__()
         self.id = id
         self.nombre = nombre
         self.apellido = apellido
@@ -12,6 +21,7 @@ class Trabajador:
         self.actividades = []
         self.horas_trabajadas = []
         self.deducciones = []
+        
 
     def agregar_actividad(self, actividad):
         self.actividades.append(actividad)
@@ -47,15 +57,87 @@ class Trabajador:
         salario_bruto = self.salario
 
         for actividad in self.actividades:
-            salario_bruto += actividad.costo
+            fecha_inicio_actividad = tim.strptime(actividad.fecha_inicio, "%Y-%m-%d").date()
+            if fecha_inicio_actividad <= self.fecha_corte:
+                salario_bruto += actividad.costo
 
         for horas, costo_por_hora in self.horas_trabajadas:
-            salario_bruto += horas * costo_por_hora
+            fecha_horas = tim.strptime(horas.fecha, "%Y-%m-%d").date()
+            if fecha_horas <= self.fecha_corte:
+                salario_bruto += horas * costo_por_hora
 
         for deduccion in self.deducciones:
             salario_bruto -= deduccion.monto
 
         return salario_bruto
+
+    # def calcular_salario_neto(self):
+    #     salario_bruto = self.salario
+
+    #     for actividad in self.actividades:
+            
+    #         if actividad.fecha_inicio <= self.fecha_corte:
+    #             salario_bruto += actividad.costo
+
+    #     for horas, costo_por_hora in self.horas_trabajadas:
+    #         if horas.fecha <= Trabajador.fecha_corte:
+    #             salario_bruto += horas * costo_por_hora
+
+    #     for deduccion in self.deducciones:
+    #         salario_bruto -= deduccion.monto
+
+    #     return salario_bruto
+
+    # def calcular_salario_neto(self):
+    #     salario_bruto = self.salario
+
+    #     for actividad in self.actividades:
+    #         if actividad.fecha_inicio <= self.fecha_corte:  # Solo considerar actividades antes de la fecha de corte
+    #             salario_bruto += actividad.costo
+
+    #     for horas, costo_por_hora in self.horas_trabajadas:
+    #         if horas.fecha <= self.fecha_corte:  # Solo considerar horas antes de la fecha de corte
+    #             salario_bruto += horas * costo_por_hora
+
+    #     for deduccion in self.deducciones:
+    #         salario_bruto -= deduccion.monto
+
+    #     return salario_bruto
+    
+    
+    
+    #mas reciente
+
+    # def calcular_salario_neto(self):
+    #     salario_bruto = self.salario
+
+    #     for actividad in self.actividades:
+    #         if actividad.fecha_inicio <= self.fecha_corte:  # Solo considerar actividades antes de la fecha de corte
+    #             salario_bruto += actividad.costo
+
+    #     for horas, costo_por_hora in self.horas_trabajadas:
+    #         if horas.fecha <= self.fecha_corte:  # Solo considerar horas antes de la fecha de corte
+    #             salario_bruto += horas * costo_por_hora
+
+    #     for deduccion in self.deducciones:
+    #         salario_bruto -= deduccion.monto
+
+    #     return salario_bruto
+
+
+    # def calcular_salario_neto(self):
+    #     salario_bruto = self.salario
+
+    #     for actividad in self.actividades:
+    #         salario_bruto += actividad.costo
+
+    #     for horas, costo_por_hora in self.horas_trabajadas:
+    #         salario_bruto += horas * costo_por_hora
+
+    #     for deduccion in self.deducciones:
+    #         salario_bruto -= deduccion.monto
+
+    #     return salario_bruto
 
 
 class Deduccion:
@@ -180,35 +262,6 @@ class LoginSystem:
         else:
             print("No hay trabajadores por hora registrados por ti.")
 
-    # def imprimir_lista_trabajadores_por_obra(self, user_id):
-    #     tb = "Trabajador por obra"
-
-    #     trabajadores_por_obra = self.cursor.execute('''
-    #         SELECT * FROM trabajadores WHERE registrado_por = ? AND cargo = ?
-    #     ''', (user_id, tb)).fetchall()
-
-    #     if trabajadores_por_obra:
-    #         print("\nMis trabajadores por obra:")
-    #         for trabajador in trabajadores_por_obra:
-    #             print("ID:", trabajador[0])
-    #             print("Nombre:", trabajador[1])
-
-    #             # Obtener las actividades del trabajador
-    #             actividades = self.obtener_actividades(trabajador[0])
-    #             if actividades:
-    #                 print("Actividades:")
-    #                 for actividad in actividades:
-    #                     print("  Descripción:", actividad.descripcion)
-    #                     print("  Estado:", actividad.estado)
-    #                     print("  Costo:", actividad.costo)
-    #                     print("  Fecha de inicio:", actividad.fecha_inicio)
-    #                     print("  Fecha de finalización:", actividad.fecha_finalizacion)
-    #                     print("------------------------")
-    #             else:
-    #                 print("No hay actividades asociadas a este trabajador por obra.")
-    #                 print("------------------------")
-    #     else:
-    #         print("No hay trabajadores por obra registrados por ti.")
 
     def imprimir_lista_trabajadores_por_obra(self, user_id):
         tb = "Trabajador por obra"
@@ -275,20 +328,23 @@ class LoginSystem:
             print("5. Eliminar cuenta")
             print("6. Agregar horas a Trabajador por hora")
             print("7. Calcular planilla")
-            print("8. Salir")
+            print("8. Establecer fecha de corte")
+            print("9. Salir")
             try:
                 opcion = int(input("\nSeleccione una opción: "))
             except ValueError:
                 print("Ingrese un número válido.")
                 continue
+            #imprime la informacion del usuario que inicio sesion
             if opcion == 1:
                 self.imprimir_informacion_trabajador(trabajador[0])
 
+            #agrega nuevos trabajadoresa
             elif opcion == 2:
                 self.registrar_nuevo_trabajador(
                     trabajador[0])
                 
-
+            #imprime la lista de trabajadores por obra para modificar el estado o progreso de la actividad
             elif opcion == 3:
                     self.imprimir_lista_trabajadores_por_obra(trabajador[0])
                     trabajador_encontrado = self.obtener_trabajadores_por_obra(trabajador[0])
@@ -332,51 +388,11 @@ class LoginSystem:
                             print("Estado de la actividad actualizado en la base de datos.")
                         else:
                             print("No se encontró ninguna actividad con la descripción proporcionada.")
-
-                    # self.imprimir_lista_trabajadores_por_obra(trabajador[0])
-                  
-                    
-                    # # Imprimir estado actual de la actividad
-                    # print("Estado actual:", Actividad().estado)
-
-
-                    # id_trabajador = input("Ingrese el ID del trabajador por obra: ")
-                    # id_actividad = input("Ingrese el ID de la actividad: ")
-
-                    # # Buscar el trabajador por obra
-                    # trabajador = self.obtener_trabajador_por_id(id_trabajador)
-                    
-                    # if trabajador is not None and isinstance(trabajador, TrabajadorPorObra):
-                    #     actividad_encontrada = None
-                    #     for actividad in trabajador.actividades:
-                    #         if actividad.id == id_actividad:
-                    #             actividad_encontrada = actividad
-                    #             print("Estado actual:", actividad_encontrada.estado)  # Imprime el estado actual
-                    #             break  # Sal del ciclo si encuentras la actividad
-                            
-                    #         if actividad_encontrada is not None:
-                    #             print("Seleccione el nuevo estado de la actividad:")
-                    #             print("1. Actividad en progreso")
-                    #             print("2. Actividad finalizada")
-                    #             opcion_estado = input("Ingrese el número de la opción: ")
-                                
-                    #             if opcion_estado == "1":
-                    #                 actividad_encontrada.estado = "En Progreso"
-                    #                 print("Estado de la actividad actualizado a 'En Progreso'.")
-                    #             elif opcion_estado == "2":
-                    #                 actividad_encontrada.estado = "Finalizada"
-                    #                 print("Estado de la actividad actualizado a 'Finalizada'.")
-                    #             else:
-                    #                 print("Opción inválida. No se realizó ninguna modificación.")
-                    #         else:
-                    #             print("No se encontró ninguna actividad con el ID proporcionado.")
-                    #     else:
-                    #         print("No se encontró ningún trabajador por obra con el ID proporcionado.")
-
-
+            #imprime los trabajadores que han sido registrados por el usuario que inicio sesion
             elif opcion == 4:
                 self.imprimir_lista_trabajadores(trabajador[0])
 
+            #elimina la cuenta
             elif opcion == 5:
                 confirmacion = input(
                     "¿Estás seguro de eliminar tu cuenta? (si/no): ")
@@ -388,6 +404,7 @@ class LoginSystem:
                     print("Cuenta eliminada exitosamente.")
                     break
 
+            #Agrega las horas y los costes por hora a los trabajadores por hora
             elif opcion == 6:
                 self.imprimir_lista_trabajadores_por_hora(trabajador[0])
                 trabajador_id = input("\nIngrese el ID del trabajador por hora: ")
@@ -400,22 +417,7 @@ class LoginSystem:
                         print("No tienes permiso para registrar horas para este trabajador.")
                 else:
                     print("No se encontró un trabajador por hora con ese ID.")
-
-            # elif opcion == 7:
-            #     planilla = Planilla()
-
-            #     trabajadores_por_obra = self.obtener_trabajadores_por_obra(trabajador[0])
-            #     trabajadores_por_hora = self.obtener_trabajadores_por_hora(trabajador[0])
-
-            #     for trabajador_por_obra in trabajadores_por_obra:
-            #         planilla.agregar_trabajador_por_obra(trabajador_por_obra)
-
-            #     for trabajador_por_hora in trabajadores_por_hora:
-            #         planilla.agregar_trabajador_por_hora(trabajador_por_hora)
-
-            #     planilla.calcular_planilla()
-
-            # Dentro del método menu_trabajador
+            #calcula el salario individual de los trabajadores por hora, obra y hace la suma correspondiente para calcular toda la planilla
             elif opcion == 7:
                 print("Calculando planilla: ")
                 
@@ -436,11 +438,20 @@ class LoginSystem:
                 # Calcula y muestra la planilla
                 planilla.calcular_planilla()
 
-
-
-
-
+            #establece la fecha de corte, en esta solo se sumaran los salarios hasta esta fecha, 
+            # cualquier actividad o hora trabajada queda fuera de la planilla
             elif opcion == 8:
+                planilla = Planilla(self.conn.cursor())
+                nueva_fecha_str = input("Ingrese la nueva fecha de corte (YYYY-MM-DD): ")
+                try:
+                    nueva_fecha = datetime.datetime.strptime(nueva_fecha_str, '%Y-%m-%d').date()
+                    f= Trabajador(None,None,None,None,None,None)
+                    f.set_fecha_corte(nueva_fecha)
+                    print("Fecha de corte actualizada para todos los trabajadores.")
+                except ValueError:
+                    print("Formato de fecha incorrecto.")
+                   
+            elif opcion == 9:
                 print("Cerrando sesión...")
                 break
             else:
@@ -604,10 +615,13 @@ class Actividad:
         return f"Actividad: {self.descripcion}\nDescripcion {self.costo}\nCosto: {self.fecha_inicio}\nFecha de inicio: {self.fecha_finalizacion}\nFecha de finalización: {self.fecha_finalizacion}\nEstado: {self.estado}"
 
 
+
+#funcional
 class TrabajadorPorHora(Trabajador):
-    def __init__(self, id, nombre, apellido, salario, cargo,  registrado_por, costo_por_hora):
-        super().__init__(id, nombre, apellido, salario, cargo,  registrado_por)
+    def __init__(self, id, nombre, apellido, salario, cargo, registrado_por, costo_por_hora):
+        super().__init__(id, nombre, apellido, salario, cargo, registrado_por)
         self.costo_por_hora = costo_por_hora
+    
     def registrar_horas_trabajadas(self, conn, trabajador_id):
         print("\nRegistro de horas trabajadas:")
         try:
@@ -624,6 +638,17 @@ class TrabajadorPorHora(Trabajador):
         conn.commit()
 
         print("Horas registradas exitosamente.")
+    def calcular_salario_neto(self):
+        total_salario = self.salario
+
+        for horas, costo_por_hora in self.horas_trabajadas:
+           if horas.fecha <= self.fecha_corte:
+              total_salario += horas * costo_por_hora
+
+        for deduccion in self.deducciones:
+          total_salario -= deduccion.monto
+
+        return total_salario
 
     def calcular_salario_neto(self):
         total_salario = self.salario
@@ -632,26 +657,74 @@ class TrabajadorPorHora(Trabajador):
             total_salario += horas * costo_por_hora
 
         for deduccion in self.deducciones:
+
             total_salario -= deduccion.monto
 
         return total_salario
-
-
+    
 class TrabajadorPorObra(Trabajador):
-     def __init__(self, id, nombre, apellido, salario, cargo, registrado_por):
+    def __init__(self, id, nombre, apellido, salario, cargo, registrado_por):
         super().__init__(id, nombre, apellido, salario, cargo, registrado_por)
         self.actividades = []  # Lista para almacenar las actividades
 
-     def agregar_actividad(self, actividad):
+    def agregar_actividad(self, actividad):
         self.actividades.append(actividad)
 
-     def calcular_pago(self):
-        total_pago = sum(actividad.costo for actividad in self.actividades)
-        return total_pago
- 
+    def calcular_pago(self, fecha_corte):
+        total_pago = 0
 
-class Planilla:   
+        for actividad in self.actividades:
+            fecha_inicio_actividad = datetime.strptime(actividad.fecha_inicio, "%Y-%m-%d").date()
+            if fecha_inicio_actividad <= fecha_corte:
+                total_pago += actividad.costo
+
+        return total_pago
+
+
+
+#Funcional
+# class TrabajadorPorObra(Trabajador):
+#      def __init__(self, id, nombre, apellido, salario, cargo, registrado_por):
+#         super().__init__(id, nombre, apellido, salario, cargo, registrado_por)
+#         self.actividades = []# Lista para almacenar las actividades
+
+#      def agregar_actividad(self, actividad):
+#         self.actividades.append(actividad)
+
+#      def calcular_pago(self):
+#         total_pago = sum(actividad.costo for actividad in self.actividades)
+#         return total_pago
+
+
+    # def calcular_planilla(self):
+    #     total_salarios = 0
+
+    #     print("\nCalculando planilla:\n")
+
+    #     for trabajador in self.trabajadores_por_obra + self.trabajadores_por_hora:
+    #         salario = trabajador.calcular_salario_neto()
+
+    #         # Verifica si la fecha de corte es posterior a la fecha del trabajador
+    #         if self.fecha_corte > trabajador.fecha_corte:
+    #             salario = 0
+
+    #         total_salarios += salario
+    #         print(f"{trabajador.nombre} {trabajador.apellido}: ${salario:.2f}")
+
+    #     print("\nTotal de salarios: ${:.2f}".format(total_salarios))
+
+    # def obtener_horas_trabajadas(self, trabajador_id):
+    #     horas_trabajadas = self.cursor.execute('''
+    #         SELECT horas, costo_por_hora FROM horas_trabajadas
+    #         WHERE trabajador_id = ?
+    #     ''', (trabajador_id,)).fetchall()
+
+    #     return horas_trabajadas
+
+
+class Planilla(FechaCort):   
     def __init__(self, cursor):
+        super().__init__()
         self.cursor = cursor
         self.trabajadores_por_obra = []
         self.trabajadores_por_hora = []
@@ -672,25 +745,16 @@ class Planilla:
         total_salarios = 0
 
         print("\nCalculando planilla:\n")
-
-        for trabajador in self.trabajadores_por_obra:
-            salario = trabajador.calcular_pago()
-            total_salarios += salario
-            print(f"{trabajador.nombre} {trabajador.apellido}: ${salario:.2f}")
-
-        for trabajador in self.trabajadores_por_hora:
-            salario = 0
-
-            # Obtener las horas trabajadas y el costo por hora desde la tabla horas_trabajadas
-            for horas_trabajadas, costo_por_hora in self.obtener_horas_trabajadas(trabajador.id):
-                salario += horas_trabajadas * costo_por_hora
-
-            trabajador.salario = salario  # Actualizar el salario del trabajador
+        Trabajador(None,None,None,None,None,None)
+        for trabajador in self.trabajadores_por_obra + self.trabajadores_por_hora:
+            salario = trabajador.calcular_salario_neto()
+            if self.fecha_corte > trabajador.fecha_corte:
+                print("Entreeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
+                salario = 0
             total_salarios += salario
             print(f"{trabajador.nombre} {trabajador.apellido}: ${salario:.2f}")
 
         print("\nTotal de salarios: ${:.2f}".format(total_salarios))
-
     def obtener_horas_trabajadas(self, trabajador_id):
         horas_trabajadas = self.cursor.execute('''
             SELECT horas, costo_por_hora FROM horas_trabajadas

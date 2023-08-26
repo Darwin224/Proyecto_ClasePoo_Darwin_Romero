@@ -58,13 +58,6 @@ class Trabajador:
         return salario_bruto
 
 
-class Actividad:
-    def __init__(self, costo, fecha_inicio, fecha_finalizacion):
-        self.costo = costo
-        self.fecha_inicio = fecha_inicio
-        self.fecha_finalizacion = fecha_finalizacion
-
-
 class Deduccion:
     def __init__(self, descripcion, monto):
         self.descripcion = descripcion
@@ -147,8 +140,7 @@ class LoginSystem:
                 costo = actividad[3]
                 fecha_inicio = actividad[4]
                 fecha_finalizacion = actividad[5]
-                actividad_obj = Actividad(
-                    descripcion, costo, fecha_inicio, fecha_finalizacion)
+                actividad_obj = Actividad(descripcion=descripcion, costo= costo,fecha_inicio= fecha_inicio, fecha_finalizacion=fecha_finalizacion)
                 trabajador_por_obra.agregar_actividad(actividad_obj)
 
             trabajadores_por_obra.append(trabajador_por_obra)
@@ -188,12 +180,97 @@ class LoginSystem:
         else:
             print("No hay trabajadores por hora registrados por ti.")
 
+    # def imprimir_lista_trabajadores_por_obra(self, user_id):
+    #     tb = "Trabajador por obra"
+
+    #     trabajadores_por_obra = self.cursor.execute('''
+    #         SELECT * FROM trabajadores WHERE registrado_por = ? AND cargo = ?
+    #     ''', (user_id, tb)).fetchall()
+
+    #     if trabajadores_por_obra:
+    #         print("\nMis trabajadores por obra:")
+    #         for trabajador in trabajadores_por_obra:
+    #             print("ID:", trabajador[0])
+    #             print("Nombre:", trabajador[1])
+
+    #             # Obtener las actividades del trabajador
+    #             actividades = self.obtener_actividades(trabajador[0])
+    #             if actividades:
+    #                 print("Actividades:")
+    #                 for actividad in actividades:
+    #                     print("  Descripción:", actividad.descripcion)
+    #                     print("  Estado:", actividad.estado)
+    #                     print("  Costo:", actividad.costo)
+    #                     print("  Fecha de inicio:", actividad.fecha_inicio)
+    #                     print("  Fecha de finalización:", actividad.fecha_finalizacion)
+    #                     print("------------------------")
+    #             else:
+    #                 print("No hay actividades asociadas a este trabajador por obra.")
+    #                 print("------------------------")
+    #     else:
+    #         print("No hay trabajadores por obra registrados por ti.")
+
+    def imprimir_lista_trabajadores_por_obra(self, user_id):
+        tb = "Trabajador por obra"
+
+        trabajadores_por_obra = self.cursor.execute('''
+            SELECT * FROM trabajadores WHERE registrado_por = ? AND cargo = ?
+        ''', (user_id, tb)).fetchall()
+
+        if trabajadores_por_obra:
+            print("\nMis trabajadores por obra:")
+            for trabajador in trabajadores_por_obra:
+                print("ID:", trabajador[0])
+                print("Nombre:", trabajador[1])
+
+                # Obtener las actividades del trabajador
+                actividades = self.obtener_actividades(trabajador[0])
+                if actividades:
+                    print("Actividades:")
+                    for actividad in actividades:
+                        print("Id Actividad",actividad.id)
+                        print("  Descripción:", actividad.descripcion)
+                        print("  Estado:", actividad.estado)
+                        print("  Costo:", actividad.costo)
+                        print("  Fecha de inicio:", actividad.fecha_inicio)
+                        print("  Fecha de finalización:", actividad.fecha_finalizacion)
+                        print("------------------------")
+                else:
+                    print("No hay actividades asociadas a este trabajador por obra.")
+                    print("------------------------")
+        else:
+            print("No hay trabajadores por obra registrados por ti.")
+
+
+    def obtener_actividades(self, trabajador_id):
+        actividades = self.cursor.execute('''
+            SELECT * FROM actividades WHERE trabajador_id = ?
+        ''', (trabajador_id,)).fetchall()
+
+        lista_actividades = []
+        for actividad in actividades:
+            actividad_id = actividad[0]
+            descripcion = actividad[2]
+            costo = actividad[3]
+            fecha_inicio = actividad[4]
+            fecha_finalizacion = actividad[5]
+            estado = actividad[6]
+
+            nueva_actividad = Actividad(descripcion, costo, fecha_inicio, fecha_finalizacion)
+            nueva_actividad.id = actividad_id
+            nueva_actividad.estado = estado
+            lista_actividades.append(nueva_actividad)
+
+        return lista_actividades
+
+
+
     def menu_trabajador(self, trabajador):
         while True:
-            print("\nBienvenido: ,", trabajador[1])
+            print("\nBienvenido: ", trabajador[1])
             print("1. Mi informacion personal")
             print("2. Añadir trabajadores")
-            print("3. Modificar salario")
+            print("3. Modificar Estado de la actividad")
             print("4. Mi equipo")
             print("5. Eliminar cuenta")
             print("6. Agregar horas a Trabajador por hora")
@@ -213,14 +290,89 @@ class LoginSystem:
                 
 
             elif opcion == 3:
-                nuevo_salario = float(input("Ingrese el nuevo salario: "))
-                self.cursor.execute('''
-                UPDATE trabajadores
-                SET salario = ?
-                WHERE id = ? AND registrado_por = ?
-            ''', (nuevo_salario, trabajador[0], trabajador[0]))
-                self.conn.commit()
-                print("Salario actualizado con éxito.")
+                    self.imprimir_lista_trabajadores_por_obra(trabajador[0])
+                    trabajador_encontrado = self.obtener_trabajadores_por_obra(trabajador[0])
+                    
+                    # Obtener la descripción de la actividad
+                    id_actividad = input("Ingrese la descripción de la actividad: ")
+                    actividad_encontrada = None
+                    
+                    for trabaj in trabajador_encontrado:
+                        for actividad in trabaj.actividades:
+                            if actividad.descripcion == id_actividad:
+                                actividad_encontrada = actividad
+                                break
+                    
+                    if actividad_encontrada is not None:
+                        print("Estado actual:", actividad_encontrada.estado)  # Imprime el estado actual
+                        
+                        print("Seleccione el nuevo estado de la actividad:")
+                        print("1. Actividad en progreso")
+                        print("2. Actividad finalizada")
+                        opcion_estado = input("Ingrese el número de la opción: ")
+                        
+                        nuevo_estado = None
+                        if opcion_estado == "1":
+                            nuevo_estado = "En Progreso"
+                        elif opcion_estado == "2":
+                            nuevo_estado = "Finalizada"
+                        else:
+                            print("Opción inválida. No se realizó ninguna modificación.")
+
+                        if nuevo_estado is not None:
+                            actividad_encontrada.estado = nuevo_estado
+                            descripcion_actividad = actividad_encontrada.descripcion  # Obtener la descripción de la actividad
+                            # Actualizar el estado en la base de datos
+                            self.cursor.execute('''
+                                UPDATE actividades
+                                SET estado = ?
+                                WHERE descripcion = ?
+                            ''', (nuevo_estado, descripcion_actividad))
+                            self.conn.commit()
+                            print("Estado de la actividad actualizado en la base de datos.")
+                        else:
+                            print("No se encontró ninguna actividad con la descripción proporcionada.")
+
+                    # self.imprimir_lista_trabajadores_por_obra(trabajador[0])
+                  
+                    
+                    # # Imprimir estado actual de la actividad
+                    # print("Estado actual:", Actividad().estado)
+
+
+                    # id_trabajador = input("Ingrese el ID del trabajador por obra: ")
+                    # id_actividad = input("Ingrese el ID de la actividad: ")
+
+                    # # Buscar el trabajador por obra
+                    # trabajador = self.obtener_trabajador_por_id(id_trabajador)
+                    
+                    # if trabajador is not None and isinstance(trabajador, TrabajadorPorObra):
+                    #     actividad_encontrada = None
+                    #     for actividad in trabajador.actividades:
+                    #         if actividad.id == id_actividad:
+                    #             actividad_encontrada = actividad
+                    #             print("Estado actual:", actividad_encontrada.estado)  # Imprime el estado actual
+                    #             break  # Sal del ciclo si encuentras la actividad
+                            
+                    #         if actividad_encontrada is not None:
+                    #             print("Seleccione el nuevo estado de la actividad:")
+                    #             print("1. Actividad en progreso")
+                    #             print("2. Actividad finalizada")
+                    #             opcion_estado = input("Ingrese el número de la opción: ")
+                                
+                    #             if opcion_estado == "1":
+                    #                 actividad_encontrada.estado = "En Progreso"
+                    #                 print("Estado de la actividad actualizado a 'En Progreso'.")
+                    #             elif opcion_estado == "2":
+                    #                 actividad_encontrada.estado = "Finalizada"
+                    #                 print("Estado de la actividad actualizado a 'Finalizada'.")
+                    #             else:
+                    #                 print("Opción inválida. No se realizó ninguna modificación.")
+                    #         else:
+                    #             print("No se encontró ninguna actividad con el ID proporcionado.")
+                    #     else:
+                    #         print("No se encontró ningún trabajador por obra con el ID proporcionado.")
+
 
             elif opcion == 4:
                 self.imprimir_lista_trabajadores(trabajador[0])
@@ -240,8 +392,6 @@ class LoginSystem:
                 self.imprimir_lista_trabajadores_por_hora(trabajador[0])
                 trabajador_id = input("\nIngrese el ID del trabajador por hora: ")
                 trabajador_encontrado = self.obtener_trabajador_por_id(trabajador_id)
-                print(trabajador_encontrado.id,trabajador_encontrado.nombre,trabajador_encontrado.apellido,trabajador_encontrado.cargo,trabajador_encontrado.registrado_por)
-                print(trabajador_encontrado.registrado_por)
 
                 if trabajador_encontrado and isinstance(trabajador_encontrado, TrabajadorPorHora):
                     if trabajador_encontrado.registrado_por == trabajador[0]:
@@ -267,7 +417,7 @@ class LoginSystem:
 
             # Dentro del método menu_trabajador
             elif opcion == 7:
-                print("Calculando planilla:")
+                print("Calculando planilla: ")
                 
                 # Crea una instancia de la clase Planilla y pásale el cursor
                 planilla = Planilla(self.conn.cursor())
@@ -351,10 +501,9 @@ class LoginSystem:
             costo_actividad = float(input("Costo de la actividad: "))
             fecha_inicio = input("Fecha de inicio (YYYY-MM-DD): ")
             fecha_finalizacion = input("Fecha de finalización (YYYY-MM-DD): ")
-            actividad = Actividad(
-                descripcion_actividad, costo_actividad, fecha_inicio, fecha_finalizacion)
-            trabajador = TrabajadorPorObra(
-                id, nombre, apellido, 0, "Trabajador por obra", user_id)
+
+            actividad = Actividad(descripcion_actividad, costo_actividad, fecha_inicio, fecha_finalizacion)
+            trabajador = TrabajadorPorObra(id, nombre, apellido, 0, "Trabajador por obra", user_id)
             trabajador.agregar_actividad(actividad)
             self.registrar_trabajador(trabajador)
         else:
@@ -441,11 +590,18 @@ class LoginSystem:
 
 
 class Actividad:
-    def __init__(self, descripcion, costo, fecha_inicio, fecha_finalizacion):
+    def __init__(self, descripcion, costo, fecha_inicio, fecha_finalizacion, estado='en progreso'):
         self.descripcion = descripcion
         self.costo = costo
         self.fecha_inicio = fecha_inicio
         self.fecha_finalizacion = fecha_finalizacion
+        self.estado = estado  # Agregamos el atributo "estado"
+
+    def marcar_actividad_completada(self):
+        self.estado = 'finalizada'
+
+    def __str__(self):
+        return f"Actividad: {self.descripcion}\nDescripcion {self.costo}\nCosto: {self.fecha_inicio}\nFecha de inicio: {self.fecha_finalizacion}\nFecha de finalización: {self.fecha_finalizacion}\nEstado: {self.estado}"
 
 
 class TrabajadorPorHora(Trabajador):
@@ -482,14 +638,14 @@ class TrabajadorPorHora(Trabajador):
 
 
 class TrabajadorPorObra(Trabajador):
-    def __init__(self, id, nombre, apellido, salario, cargo,  registrado_por):
-        super().__init__(id, nombre, apellido, salario, cargo,  registrado_por)
-        self.actividades = []
+     def __init__(self, id, nombre, apellido, salario, cargo, registrado_por):
+        super().__init__(id, nombre, apellido, salario, cargo, registrado_por)
+        self.actividades = []  # Lista para almacenar las actividades
 
-    def agregar_actividad(self, actividad):
+     def agregar_actividad(self, actividad):
         self.actividades.append(actividad)
 
-    def calcular_pago(self):
+     def calcular_pago(self):
         total_pago = sum(actividad.costo for actividad in self.actividades)
         return total_pago
  
